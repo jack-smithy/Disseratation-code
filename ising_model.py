@@ -167,45 +167,4 @@ class Ising(object):
         return T, E, absM, C, X
 
 
-if __name__=='__main__':
-    sizes = [32, 64, 96, 128]
-    C_vals = []
-    X_vals = []
-    temperatures = np.linspace(1,4, 31)
 
-    for size in sizes:
-        s = Ising(N=size, live_show=True)
-        results = s.simulate(temperatures, 50000)
-        plt.close('all')
-        T, E, absM, C, X = s.c_for_size(results)
-        C_vals.append(C)
-        X_vals.append(X)
-
-    fig, (ax0, ax1) = plt.subplots(nrows = 1, ncols= 2, figsize=(8,4))
-
-    plt.style.use('classic')
-
-    ax0.set_title("C")
-    ax0.grid(True)
-    ax0.plot(temperatures, C_vals[0])
-    ax0.scatter(temperatures ,C_vals[0], s=10, marker='v')
-    ax0.plot(temperatures, C_vals[1])
-    ax0.scatter(temperatures ,C_vals[1], s=10, marker='o')
-    ax0.plot(temperatures, C_vals[2])
-    ax0.scatter(temperatures ,C_vals[2], s=10, marker='P')
-    ax0.plot(temperatures, C_vals[3])
-    ax0.scatter(temperatures ,C_vals[3], s=10, marker='D')
-
-    ax1.set_title("X")
-    ax1.grid(True)
-    ax1.plot(temperatures, X_vals[0])
-    ax1.scatter(temperatures ,X_vals[0], s=10, marker='v')
-    ax1.plot(temperatures, X_vals[1])
-    ax1.scatter(temperatures ,X_vals[1], s=10, marker='o')
-    ax1.plot(temperatures, X_vals[2])
-    ax1.scatter(temperatures ,X_vals[2], s=10, marker='+')
-    ax1.plot(temperatures, X_vals[3])
-    ax1.scatter(temperatures ,X_vals[3], s=10, marker='D')
-
-    plt.show()
-    

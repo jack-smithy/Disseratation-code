@@ -129,38 +129,11 @@ class Ising(object):
 
             results.append((T, E, M, C, X))
             print(f'T={T}, E={E}, M={M}, C={C}, X={X}')
+
         return results
 
-
-    def plot(self, T_values):
+    def make_tuple(self, T_values):
         plt.close('all')
-        plt.rc('text', usetex=True)
-        plt.rc('font', family='serif')
-        plt.ioff()
-        T, E, absM, C, X = zip(*T_values)
-
-        fig, axs = plt.subplots(2,2, figsize=(6,4), constrained_layout=True)
-        fig.suptitle(f'Ising Model size={self.N}')
-
-        axs[0,0].plot(T, absM)
-        axs[0,0].set_ylabel('M')
-
-        axs[0,1].plot(T, E)
-        axs[0,1].set_ylabel('E')
-
-        axs[1,0].plot(T, C)
-        axs[1,0].set_ylabel('C')
-
-        axs[1,1].plot(T, X)
-        axs[1,1].set_ylabel('X')
-
-        #plt.savefig(f'ising_size={self.N}')
-        plt.show()
-
-    def c_for_size(self, T_values):
-        plt.close('all')
-        plt.rc('text', usetex=True)
-        plt.rc('font', family='serif')
         plt.ioff()
         T, E, absM, C, X = zip(*T_values)
 

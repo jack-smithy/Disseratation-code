@@ -5,16 +5,16 @@ from ising_model import Ising
 SIZE = 64
 LIVE = True
 
-START_T = 2
-END_T = 3
+START_T = 0.1
+END_T = 6
 N_T = 11
-MC_STEPS = 1
+MC_STEPS = 5e4
 
 s = Ising(N=SIZE, live_show=LIVE)
 results = s.simulate(np.linspace(START_T, END_T, N_T), MC_STEPS)
+T, E, M, C, X = s.make_tuple(results)
 
-def plot_quantities(vals):
-    T, E, M, C, X = s.make_tuple(vals)
+def plot_quantities(T, E, M, C, X):
     fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(6,4), constrained_layout=True)
     fig.suptitle(f'Ising Model size={SIZE}, MC steps={MC_STEPS}')
 
@@ -36,5 +36,5 @@ def plot_quantities(vals):
 
     plt.show()
 
-plot_quantities(results)
+plot_quantities(T, E, M, C, X)
 

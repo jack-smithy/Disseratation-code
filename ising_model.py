@@ -20,7 +20,6 @@ class Ising(object):
         self.setup_lattice()
         self.setup_plotting()
 
-
     def setup_lattice(self):
         '''Randomly initialise spins'''
         self.lattice = np.ones([self.N, self.N])
@@ -62,9 +61,9 @@ class Ising(object):
         [x,y] = pos
 
         dE = 2*self.J*self.lattice[y,x]*(self.lattice[(y-1)%self.N,x]+
-                                   self.lattice[(y+1)%self.N,x]+
-                                   self.lattice[y,(x-1)%self.N]+
-                                   self.lattice[y,(x+1)%self.N])
+                                         self.lattice[(y+1)%self.N,x]+
+                                         self.lattice[y,(x-1)%self.N]+
+                                         self.lattice[y,(x+1)%self.N])
 
         dM = -2*self.lattice[y,x]
 
@@ -124,8 +123,8 @@ class Ising(object):
 
             E = E/(size*steps)
             M = M/(size*steps)
-            C = (E2/(size*steps)-E**2/(size*steps**2))/T**2
-            X = (M2/(size*steps)-M**2/(size*steps**2))/T
+            C = (1/steps**2)*(E2/(size)-E**2/(size*steps))/T**2
+            X = (1/steps**2)*(M2/(size)-M**2/(size*steps))/T
 
             results.append((T, E, M, C, X))
             print(f'T={T}, E={E}, M={M}, C={C}, X={X}')
@@ -138,6 +137,17 @@ class Ising(object):
         T, E, absM, C, X = zip(*T_values)
 
         return T, E, absM, C, X
+
+'''
+if __name__=='__main__':
+    s = Ising(N=64, live_show=True)
+    results = s.simulate(np.linspace(0.1, 6, 40), 100000)
+    T, E, M, C, X = s.make_tuple(results)
+
+    plt.plot(T, C)
+    plt.show()
+
+'''
 
 
 

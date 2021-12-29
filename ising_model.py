@@ -157,7 +157,7 @@ class Ising(object):
         #plt.savefig(f'ising_size={self.N}')
         plt.show()
 
-    def c_for_size(self, T_values):
+    def tuple(self, T_values):
         plt.close('all')
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif')

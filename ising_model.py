@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import random
+from statistics import mean
 
 class Ising(object):
     def __init__(self, N, J=1.0, T=1, f=0.2, live_show=False):
@@ -106,25 +106,22 @@ class Ising(object):
             if self.live_show and n%2000==0:
                 self.plot_lattice(thermalising)
 
-        norm = float(self.N**2)
-
-        return Esum , Msum, E2sum, M2sum
-
+        return Esum, Msum, E2sum, M2sum
 
     def simulate(self, temperatures, steps):
         results=[]
-        #self.live_show = True
         lattice = self.setup_lattice()
         size = self.N**2
 
         for T in temperatures:
             self.T = T
-            E, M, E2, M2 = self.monte_carlo(steps)
+            Esum, Msum, E2sum, M2sum = self.monte_carlo(steps)
 
-            E = E/(size*steps)
-            M = M/(size*steps)
-            C = (1/steps**2)*(E2/(size)-E**2/(size*steps))/T**2
-            X = (1/steps**2)*(M2/(size)-M**2/(size*steps))/T
+            E = Esum/(size*steps)
+            M = Msum/(size*steps)
+
+            C = (E2sum/(size*steps) - (E/(size*steps))**2)/(steps*T**2)
+            X = (M2sum - M**2)/T
 
             results.append((T, E, M, C, X))
             print(f'T={T}, E={E}, M={M}, C={C}, X={X}')
@@ -138,25 +135,39 @@ class Ising(object):
 
         return T, E, absM, C, X
 
-'''
-if __name__=='__main__':
-    s = Ising(N=64, live_show=True)
-    results = s.simulate(np.linspace(0.1, 6, 40), 100000)
-    T, E, M, C, X = s.make_tuple(results)
+    def plot_quantities(self, T_values):
 
-<<<<<<< HEAD
-    def tuple(self, T_values):
-        plt.close('all')
-        plt.rc('text', usetex=True)
-        plt.rc('font', family='serif')
-        plt.ioff()
-        T, E, absM, C, X = zip(*T_values)
-=======
-    plt.plot(T, C)
-    plt.show()
->>>>>>> cce86d191307c472d328c641685d9ba95fc66f83
+        T, E, M, C, X = self.make_tuple(T_values)
 
-'''
+        fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(6,4), 
+                            constrained_layout=True)
+        fig.suptitle(f'Ising Model size={self.N}')
+
+        axs[0,0].plot(T, M)
+        axs[0,0].grid()
+        axs[0,0].set_ylabel('M')
+
+        axs[0,1].plot(T, E)
+        axs[0,1].grid()
+        axs[0,1].set_ylabel('E')
+
+        axs[1,0].plot(T, C)
+        axs[1,0].grid()
+        axs[1,0].set_ylabel('C')
+
+        axs[1,1].plot(T, X)
+        axs[1,1].grid()
+        axs[1,1].set_ylabel('X')
+
+        plt.show()
+
+
+s = Ising(N=64, live_show=True)
+results = s.simulate(np.linspace(1,4,11), 50000)
+s.plot_quantities(results)
+
+
+
 
 
 

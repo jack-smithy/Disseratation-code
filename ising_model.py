@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import random
+from statistics import mean
 
 class Ising(object):
     def __init__(self, N, J=1.0, T=1, f=0.2, live_show=False):
@@ -19,7 +19,6 @@ class Ising(object):
 
         self.setup_lattice()
         self.setup_plotting()
-
 
     def setup_lattice(self):
         '''Randomly initialise spins'''
@@ -62,9 +61,9 @@ class Ising(object):
         [x,y] = pos
 
         dE = 2*self.J*self.lattice[y,x]*(self.lattice[(y-1)%self.N,x]+
-                                   self.lattice[(y+1)%self.N,x]+
-                                   self.lattice[y,(x-1)%self.N]+
-                                   self.lattice[y,(x+1)%self.N])
+                                         self.lattice[(y+1)%self.N,x]+
+                                         self.lattice[y,(x-1)%self.N]+
+                                         self.lattice[y,(x+1)%self.N])
 
         dM = -2*self.lattice[y,x]
 
@@ -107,105 +106,68 @@ class Ising(object):
             if self.live_show and n%2000==0:
                 self.plot_lattice(thermalising)
 
-        norm = float(self.N**2)
-
-        return Esum , Msum, E2sum, M2sum
-
+        return Esum, Msum, E2sum, M2sum
 
     def simulate(self, temperatures, steps):
         results=[]
-        #self.live_show = True
         lattice = self.setup_lattice()
         size = self.N**2
 
         for T in temperatures:
             self.T = T
-            E, M, E2, M2 = self.monte_carlo(steps)
+            Esum, Msum, E2sum, M2sum = self.monte_carlo(steps)
 
-            E = E/(size*steps)
-            M = M/(size*steps)
-            C = (E2/(size*steps)-E**2/(size*steps**2))/T**2
-            X = (M2/(size*steps)-M**2/(size*steps**2))/T
+            E = Esum/(size*steps)
+            M = Msum/(size*steps)
+
+            C = (E2sum/(size*steps) - (E/(size*steps))**2)/(steps*T**2)
+            X = (M2sum - M**2)/T
 
             results.append((T, E, M, C, X))
             print(f'T={T}, E={E}, M={M}, C={C}, X={X}')
+
         return results
 
-
-    def plot(self, T_values):
+    def make_tuple(self, T_values):
         plt.close('all')
-        plt.rc('text', usetex=True)
-        plt.rc('font', family='serif')
-        plt.ioff()
-        T, E, absM, C, X = zip(*T_values)
-
-        fig, axs = plt.subplots(2,2, figsize=(6,4), constrained_layout=True)
-        fig.suptitle(f'Ising Model size={self.N}')
-
-        axs[0,0].plot(T, absM)
-        axs[0,0].set_ylabel('M')
-
-        axs[0,1].plot(T, E)
-        axs[0,1].set_ylabel('E')
-
-        axs[1,0].plot(T, C)
-        axs[1,0].set_ylabel('C')
-
-        axs[1,1].plot(T, X)
-        axs[1,1].set_ylabel('X')
-
-        #plt.savefig(f'ising_size={self.N}')
-        plt.show()
-
-    def c_for_size(self, T_values):
-        plt.close('all')
-        plt.rc('text', usetex=True)
-        plt.rc('font', family='serif')
         plt.ioff()
         T, E, absM, C, X = zip(*T_values)
 
         return T, E, absM, C, X
 
+    def plot_quantities(self, T_values):
 
-if __name__=='__main__':
-    sizes = [32, 64, 96, 128]
-    C_vals = []
-    X_vals = []
-    temperatures = np.linspace(1,4, 31)
+        T, E, M, C, X = self.make_tuple(T_values)
 
-    for size in sizes:
-        s = Ising(N=size, live_show=True)
-        results = s.simulate(temperatures, 50000)
-        plt.close('all')
-        T, E, absM, C, X = s.c_for_size(results)
-        C_vals.append(C)
-        X_vals.append(X)
+        fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(6,4), 
+                            constrained_layout=True)
+        fig.suptitle(f'Ising Model size={self.N}')
 
-    fig, (ax0, ax1) = plt.subplots(nrows = 1, ncols= 2, figsize=(8,4))
+        axs[0,0].plot(T, M)
+        axs[0,0].grid()
+        axs[0,0].set_ylabel('M')
 
-    plt.style.use('classic')
+        axs[0,1].plot(T, E)
+        axs[0,1].grid()
+        axs[0,1].set_ylabel('E')
 
-    ax0.set_title("C")
-    ax0.grid(True)
-    ax0.plot(temperatures, C_vals[0])
-    ax0.scatter(temperatures ,C_vals[0], s=10, marker='v')
-    ax0.plot(temperatures, C_vals[1])
-    ax0.scatter(temperatures ,C_vals[1], s=10, marker='o')
-    ax0.plot(temperatures, C_vals[2])
-    ax0.scatter(temperatures ,C_vals[2], s=10, marker='P')
-    ax0.plot(temperatures, C_vals[3])
-    ax0.scatter(temperatures ,C_vals[3], s=10, marker='D')
+        axs[1,0].plot(T, C)
+        axs[1,0].grid()
+        axs[1,0].set_ylabel('C')
 
-    ax1.set_title("X")
-    ax1.grid(True)
-    ax1.plot(temperatures, X_vals[0])
-    ax1.scatter(temperatures ,X_vals[0], s=10, marker='v')
-    ax1.plot(temperatures, X_vals[1])
-    ax1.scatter(temperatures ,X_vals[1], s=10, marker='o')
-    ax1.plot(temperatures, X_vals[2])
-    ax1.scatter(temperatures ,X_vals[2], s=10, marker='+')
-    ax1.plot(temperatures, X_vals[3])
-    ax1.scatter(temperatures ,X_vals[3], s=10, marker='D')
+        axs[1,1].plot(T, X)
+        axs[1,1].grid()
+        axs[1,1].set_ylabel('X')
 
-    plt.show()
-    
+        plt.show()
+
+
+s = Ising(N=64, live_show=True)
+results = s.simulate(np.linspace(1,4,11), 50000)
+s.plot_quantities(results)
+
+
+
+
+
+

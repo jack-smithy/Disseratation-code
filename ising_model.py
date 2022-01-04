@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from statistics import mean
+import datetime as dt
 
 class Ising(object):
     def __init__(self, N, J=1.0, T=1, f=0.2, live_show=False):
@@ -106,22 +107,20 @@ class Ising(object):
             if self.live_show and n%2000==0:
                 self.plot_lattice(thermalising)
 
-        return Esum, Msum, E2sum, M2sum
+        norm = steps*self.N**2
+
+        return Esum/norm , Msum/norm , E2sum/norm , M2sum/norm
 
     def simulate(self, temperatures, steps):
         results=[]
         lattice = self.setup_lattice()
-        size = self.N**2
 
         for T in temperatures:
             self.T = T
-            Esum, Msum, E2sum, M2sum = self.monte_carlo(steps)
+            E, M, E2, M2 = self.monte_carlo(steps)
 
-            E = Esum/(size*steps)
-            M = Msum/(size*steps)
-
-            C = (E2sum/(size*steps) - (E/(size*steps))**2)/(steps*T**2)
-            X = (M2sum - M**2)/T
+            C = (E2 - E**2)/(steps*T**2)
+            X = (M2 - M**2)/(steps*T)
 
             results.append((T, E, M, C, X))
             print(f'T={T}, E={E}, M={M}, C={C}, X={X}')
@@ -162,9 +161,12 @@ class Ising(object):
         plt.show()
 
 
+begin = dt.datetime.now()
 s = Ising(N=64, live_show=True)
 results = s.simulate(np.linspace(1,4,11), 50000)
+print(dt.datetime.now()- begin)
 s.plot_quantities(results)
+
 
 
 

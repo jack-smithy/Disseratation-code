@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 from ising_model import Ising
 
 SIZE = 64
-SIZES = [32, 64, 128]
+SIZES = [32, 64, 96]
 LIVE = True
 
 START_T = 1
 END_T = 4
-N_T = 11
-MC_STEPS = 5e4
+N_T = 31
+MC_STEPS = 100000
 
 
 def multiple_sizes(sizes):

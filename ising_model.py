@@ -1,16 +1,25 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from statistics import mean
+import datetime as dt
 
 class Ising(object):
-    def __init__(self, N, J=1.0, T=1, f=0.2, live_show=False):
-        '''
-        param N: Lattice size NxN
-        param J: Interaction strength mean
-        param T: Temperature of the system
-        param f: Thermalising steps
-        '''
+    def __init__(self, N, J=1.0, T=1.0, f=0.2, live_show=False):
+        """
+        Initialises the lattice with the necessary attributes.
 
+        Parameters
+        ----------
+        N : int
+            Size of the lattice side
+        J : float, optional
+            Interaction strength between spins, by default 1.0
+        T : float, optional
+            Temparature of the system, by default 1J
+        f : float, optional
+            [description], by default 0.2
+        live_show : bool
+            Show a live snapshot of the lattice, by default False
+        """
         self.N=N
         self.J=J
         self.T=T
@@ -21,17 +30,30 @@ class Ising(object):
         self.setup_plotting()
 
     def setup_lattice(self):
-        '''Randomly initialise spins'''
+        """
+        Sets up NxN lattice with randomly initialised spins.
+        """
         self.lattice = np.ones([self.N, self.N])
 
     def setup_plotting(self):
+        """
+        Creates axes for live plotting
+        """
         plt.close('all')
         self.live = plt.figure(figsize=(4, 4))
         plt.ion()
         plt.axis('off')
         plt.show()
 
-    def plot_lattice(self, thermalising=False):
+    def plot_lattice(self, thermalising):
+        """
+        Show the lattice spins on an NxN grid.
+
+        Parameters
+        ----------
+        thermalising : bool
+            Shows the lattice in a different colour when the system is thermalising
+        """
         X, Y = np.meshgrid(range(self.N), range(self.N))
         cm = plt.cm.Blues
 
@@ -46,6 +68,16 @@ class Ising(object):
         plt.cla()
     
     def measure(self):
+        """
+        Measures the energy and magnetisation of the system.
+
+        Returns
+        -------
+        E : float
+            Energy of the system
+        M : float
+            Magnetisation of the system
+        """
         E, M = 0,0 
 
         config = self.lattice
@@ -57,7 +89,21 @@ class Ising(object):
         return E, M
 
     def change(self, pos):
+        """
+        Measures the change in energy and magnetisation when one spin is flipped.
 
+        Parameters
+        ----------
+        pos : ndarray
+            Location of the flipped spin
+
+        Returns
+        -------
+        dE : float
+            Change in energy of the lattice
+        dM : float
+            Change in magnetisation of the lattice
+        """
         [x,y] = pos
 
         dE = 2*self.J*self.lattice[y,x]*(self.lattice[(y-1)%self.N,x]+
@@ -70,6 +116,25 @@ class Ising(object):
         return dE, dM
 
     def monte_carlo(self, steps):
+        """
+        Performs the Metropolis algorithm to measure the average values for the observables.
+
+        Parameters
+        ----------
+        steps : int
+            Number of Monte Carlo steps for the algorithm to perform per temperature
+
+        Returns
+        -------
+        E : float
+            Average value of the energy per spin of the system
+        M : float
+            Average value of the magnetisation per spin of the system
+        E2 : float
+            Average value of the energy squared per spin of the system
+        M2 : float
+            Average value of the magnetisation squared per spin of the system
+        """
         E, M = self.measure()
         E2, M2 = E**2, M**2
   
@@ -106,29 +171,64 @@ class Ising(object):
             if self.live_show and n%2000==0:
                 self.plot_lattice(thermalising)
 
-        return Esum, Msum, E2sum, M2sum
+        norm = steps*self.N**2
+
+        return Esum/norm , Msum/norm , E2sum/norm , M2sum/norm
 
     def simulate(self, temperatures, steps):
+        """
+        Performs the Monte Carlo simulation over a range of temperatures.
+
+        Parameters
+        ----------
+        temperatures : list
+            Temperatures for the system to be simulated at
+        steps : int
+            Number of Monte Carlo steps for the algorithm to perform per temperature
+
+        Returns
+        -------
+        results : list
+            List of tuples of the calculated values for each temperature
+            
+        """
         results=[]
         lattice = self.setup_lattice()
-        size = self.N**2
 
         for T in temperatures:
             self.T = T
-            Esum, Msum, E2sum, M2sum = self.monte_carlo(steps)
+            E, M, E2, M2 = self.monte_carlo(steps)
 
-            E = Esum/(size*steps)
-            M = Msum/(size*steps)
-
-            C = (E2sum/(size*steps) - (E/(size*steps))**2)/(steps*T**2)
-            X = (M2sum - M**2)/T
+            C = (E2 - E**2)/(steps*T**2)
+            X = (M2 - M**2)/(steps*T)
 
             results.append((T, E, M, C, X))
             print(f'T={T}, E={E}, M={M}, C={C}, X={X}')
 
-        return results
+            return results
 
-    def make_tuple(self, T_values):
+    def get_values(self, T_values):
+        """
+        Changes a lift of tuples into a tuple of lists
+
+        Parameters
+        ----------
+        T_values : list
+            The results returned by the simulate function
+
+        Returns
+        -------
+        T : list
+            The temperatures of each simulation
+        E : list
+            The energy for each temperature
+        M : list
+            The magnetisation for each temperature
+        C : list
+            The specific heat for each temperature
+        X : list
+            The magnetic susceptibility for each temperature
+        """
         plt.close('all')
         plt.ioff()
         T, E, absM, C, X = zip(*T_values)
@@ -136,8 +236,15 @@ class Ising(object):
         return T, E, absM, C, X
 
     def plot_quantities(self, T_values):
+        """
+        plot_quantities [summary]
 
-        T, E, M, C, X = self.make_tuple(T_values)
+        Parameters
+        ----------
+        T_values : [type]
+            [description]
+        """
+        T, E, M, C, X = self.get_values(T_values)
 
         fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(6,4), 
                             constrained_layout=True)
@@ -162,12 +269,9 @@ class Ising(object):
         plt.show()
 
 
-s = Ising(N=64, live_show=True)
-results = s.simulate(np.linspace(1,4,11), 50000)
-s.plot_quantities(results)
-
-
-
-
-
-
+if __name__ == "__main__":
+    start = dt.datetime.now()
+    s = Ising(N=16, live_show=False)
+    results = s.simulate(np.linspace(1,4,6), 50000)
+    print(dt.datetime.now()-start)
+    s.plot_quantities(results)

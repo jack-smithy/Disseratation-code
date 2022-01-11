@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import datetime as dt
 
 class Ising(object):
-    def __init__(self, N, J=1.0, T=1.0, f=0.2, live_show=False):
+    def __init__(self, N, T=1.0, f=0.2, live_show=False):
         """
         Initialises the lattice with the necessary attributes.
 
@@ -11,8 +11,6 @@ class Ising(object):
         ----------
         N : int
             Size of the lattice side
-        J : float, optional
-            Interaction strength between spins, by default 1.0
         T : float, optional
             Temparature of the system, by default 1J
         f : float, optional
@@ -21,7 +19,6 @@ class Ising(object):
             Show a live snapshot of the lattice, by default False
         """
         self.N=N
-        self.J=J
         self.T=T
         self.f=f
         self.live_show = live_show
@@ -31,13 +28,13 @@ class Ising(object):
 
     def setup_lattice(self):
         """
-        Sets up NxN lattice with randomly initialised spins.
+        Setup the lattice with a configuration of all up spins.
         """
         self.lattice = np.ones([self.N, self.N])
 
     def setup_plotting(self):
         """
-        Creates axes for live plotting
+        Setup a figure for interactive plotting.
         """
         plt.close('all')
         self.live = plt.figure(figsize=(4, 4))
@@ -47,7 +44,7 @@ class Ising(object):
 
     def plot_lattice(self, thermalising):
         """
-        Show the lattice spins on an NxN grid.
+        Plot the lattice spins on an NxN grid.
 
         Parameters
         ----------
@@ -74,9 +71,9 @@ class Ising(object):
         Returns
         -------
         E : float
-            Energy of the system
+            Energy per spin of the system
         M : float
-            Magnetisation of the system
+            Magnetisation per spin of the system
         """
         E, M = 0,0 
 
@@ -86,7 +83,7 @@ class Ising(object):
         E = -np.sum(config*(np.roll(config, 1, axis=0)+
                             np.roll(config, 1, axis=1)))
 
-        return E, M
+        return E/self.N**2, abs(M)/self.N**2
 
     def change(self, pos):
         """
@@ -101,21 +98,17 @@ class Ising(object):
         -------
         dE : float
             Change in energy of the lattice
-        dM : float
-            Change in magnetisation of the lattice
         """
         [x,y] = pos
 
-        dE = 2*self.J*self.lattice[y,x]*(self.lattice[(y-1)%self.N,x]+
+        dE = 2*self.lattice[y,x]*(self.lattice[(y-1)%self.N,x]+
                                          self.lattice[(y+1)%self.N,x]+
                                          self.lattice[y,(x-1)%self.N]+
                                          self.lattice[y,(x+1)%self.N])
 
-        dM = -2*self.lattice[y,x]
+        return dE
 
-        return dE, dM
-
-    def monte_carlo(self, steps):
+    def monte_carlo_step(self):
         """
         Performs the Metropolis algorithm to measure the average values for the observables.
 
@@ -135,47 +128,54 @@ class Ising(object):
         M2 : float
             Average value of the magnetisation squared per spin of the system
         """
-        E, M = self.measure()
-        E2, M2 = E**2, M**2
-  
-        Esum = E
-        Msum = abs(M)
-        E2sum = E2
-        M2sum = M2
 
-        for n in range(int((1+self.f)*steps)):
-            pos = np.random.randint(0, self.N, [2])
+        pos = np.random.randint(0, self.N, [2])
 
-            dE, dM = self.change(pos)
+        dE = self.change(pos)
 
-            if dE <= 0 or np.random.random() < np.exp((-1.0/self.T)*dE):
-                self.lattice[pos[1], pos[0]] *= -1
+        if dE <= 0 or np.random.random() < np.exp((-1.0/self.T)*dE):
+            self.lattice[pos[1], pos[0]] *= -1
 
-                E += dE
-                M += dM
+    def monte_carlo_run(self, sweeps, sampleRate=500):
+        """
+        Runs a certain number of sweeps of the lattice and stores the energy and magnetisation.
 
-                E2 += E**2
-                M2 += M**2
-            
-            if n>self.f*steps:
-                Esum += E
-                Msum += abs(M)
-                E2sum += E2
-                M2sum += M2
+        Parameters
+        ----------
+        sweeps : int
+            number of sweeps of the lattice
+        sampleRate : int, optional
+            Frequency of recording the calculated value, by default 500
 
-                thermalising = False
+        Returns
+        -------
+        Ene, Mag : [tuple]
+            Arrays of energy and magnetisation 
+        """
 
-            if n<=self.f*steps:
-                thermalising = True
+        for i in range(int(self.f*sweeps*self.N**2)):
+            self.monte_carlo_step()
+            if self.live_show and i%2000 == 0:
+                self.plot_lattice(thermalising=True)
+                
 
-            if self.live_show and n%2000==0:
-                self.plot_lattice(thermalising)
+        Mag = np.zeros(int((sweeps*self.N**2)/sampleRate))
+        Ene = np.zeros(int((sweeps*self.N**2)/sampleRate))
 
-        norm = steps*self.N**2
+        for i in range(int(sweeps*self.N**2)):
+            thermalising = False
+            self.monte_carlo_step()
+            if i%sampleRate == 0:
+                index = int(i/sampleRate)
 
-        return Esum/norm , Msum/norm , E2sum/norm , M2sum/norm
+                Ene[index], Mag[index] = self.measure()
 
-    def simulate(self, temperatures, steps):
+            if self.live_show and i%2000 == 0:
+                self.plot_lattice(thermalising=True)
+
+        return Ene, Mag
+        
+    def simulate(self, temperatures, sweeps):
         """
         Performs the Monte Carlo simulation over a range of temperatures.
 
@@ -197,15 +197,21 @@ class Ising(object):
 
         for T in temperatures:
             self.T = T
-            E, M, E2, M2 = self.monte_carlo(steps)
+            Ene, Mag = self.monte_carlo_run(sweeps)
 
-            C = (E2 - E**2)/(steps*T**2)
-            X = (M2 - M**2)/(steps*T)
+            E = np.mean(Ene)
+            E2 = np.mean(np.power(Ene, 2))
+
+            M = np.mean(Mag)
+            M2 = np.mean(np.power(Mag, 2))
+
+            C = (E2 - E**2)/T**2
+            X = (M2 - M**2)/T
 
             results.append((T, E, M, C, X))
             print(f'T={T}, E={E}, M={M}, C={C}, X={X}')
 
-            return results
+        return results
 
     def get_values(self, T_values):
         """
@@ -271,7 +277,7 @@ class Ising(object):
 
 if __name__ == "__main__":
     start = dt.datetime.now()
-    s = Ising(N=16, live_show=False)
-    results = s.simulate(np.linspace(1,4,6), 50000)
+    s = Ising(N=16, live_show=True)
+    results = s.simulate(np.linspace(1,4,11), 500)
     print(dt.datetime.now()-start)
     s.plot_quantities(results)

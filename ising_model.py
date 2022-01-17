@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
+plt.style.use('classic')
 
 class Ising(object):
     def __init__(self, N, T=1.0, f=0.2, live_show=False):
@@ -24,7 +25,9 @@ class Ising(object):
         self.live_show = live_show
 
         self.setup_lattice()
-        self.setup_plotting()
+
+        if live_show == True:
+            self.setup_plotting()
 
     def setup_lattice(self):
         """
@@ -152,26 +155,25 @@ class Ising(object):
         Ene, Mag : [tuple]
             Arrays of energy and magnetisation 
         """
+        Mag = np.zeros(int((sweeps*self.N**2)/sampleRate)+1)
+        Ene = np.zeros(int((sweeps*self.N**2)/sampleRate)+1)
 
         for i in range(int(self.f*sweeps*self.N**2)):
             self.monte_carlo_step()
+
             if self.live_show and i%2000 == 0:
                 self.plot_lattice(thermalising=True)
-                
-
-        Mag = np.zeros(int((sweeps*self.N**2)/sampleRate))
-        Ene = np.zeros(int((sweeps*self.N**2)/sampleRate))
 
         for i in range(int(sweeps*self.N**2)):
-            thermalising = False
             self.monte_carlo_step()
+
             if i%sampleRate == 0:
                 index = int(i/sampleRate)
 
                 Ene[index], Mag[index] = self.measure()
 
             if self.live_show and i%2000 == 0:
-                self.plot_lattice(thermalising=True)
+                self.plot_lattice(thermalising=False)
 
         return Ene, Mag
         
@@ -196,6 +198,7 @@ class Ising(object):
         lattice = self.setup_lattice()
 
         for T in temperatures:
+            print(f"Currently on T={T}")
             self.T = T
             Ene, Mag = self.monte_carlo_run(sweeps)
 
@@ -209,7 +212,7 @@ class Ising(object):
             X = (M2 - M**2)/T
 
             results.append((T, E, M, C, X))
-            print(f'T={T}, E={E}, M={M}, C={C}, X={X}')
+            #print(f'T={T}, E={E}, M={M}, C={C}, X={X}')
 
         return results
 
@@ -277,7 +280,32 @@ class Ising(object):
 
 if __name__ == "__main__":
     start = dt.datetime.now()
-    s = Ising(N=16, live_show=True)
-    results = s.simulate(np.linspace(1,4,11), 500)
-    print(dt.datetime.now()-start)
-    s.plot_quantities(results)
+
+    sweeps = 5000
+
+    Ns = [8, 12, 16, 20]
+    numNs = len(Ns)
+
+    Ts = np.linspace(1, 4, 21)
+    numTs = len(Ts)
+
+    MC = np.zeros(shape = (numNs, numTs))
+
+    
+    for j, N in enumerate(Ns):
+        print(f"Lattice size N={N}")
+        s = Ising(N)
+        results = s.simulate(Ts, sweeps)
+        T, E, M, C, X = s.get_values(results)
+        MC[j,:] = C
+        
+    plt.plot(T, MC[0,:], label=f"N={Ns[0]}")
+    plt.plot(T, MC[1,:], label=f"N={Ns[1]}")
+    plt.plot(T, MC[2,:], label=f"N={Ns[2]}")
+    plt.plot(T, MC[3,:], label=f"N={Ns[3]}")
+    plt.xlim(1, 4)
+    ymin, ymax = plt.ylim()
+    plt.ylim(0, ymax)
+    plt.legend()
+    plt.grid()
+    plt.show()

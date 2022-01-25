@@ -185,14 +185,13 @@ class Ising(object):
         ----------
         temperatures : list
             Temperatures for the system to be simulated at
-        steps : int
-            Number of Monte Carlo steps for the algorithm to perform per temperature
+        sweeps : int
+            Number of Monte Carlo sweeps of the lattice for the algorithm to perform per temperature
 
         Returns
         -------
         results : list
             List of tuples of the calculated values for each temperature
-            
         """
         results=[]
         lattice = self.setup_lattice()
@@ -216,56 +215,28 @@ class Ising(object):
 
         return results
 
-    def get_values(self, T_values):
-        """
-        Changes a lift of tuples into a tuple of lists
-
-        Parameters
-        ----------
-        T_values : list
-            The results returned by the simulate function
-
-        Returns
-        -------
-        T : list
-            The temperatures of each simulation
-        E : list
-            The energy for each temperature
-        M : list
-            The magnetisation for each temperature
-        C : list
-            The specific heat for each temperature
-        X : list
-            The magnetic susceptibility for each temperature
-        """
-        plt.close('all')
-        plt.ioff()
-        T, E, absM, C, X = zip(*T_values)
-
-        return T, E, absM, C, X
-
     def plot_quantities(self, T_values):
         """
-        plot_quantities [summary]
+        Plots E, M, C, X against T
 
         Parameters
         ----------
-        T_values : [type]
-            [description]
+        T_values : Tuple
+            Data from the simulation
         """
-        T, E, M, C, X = self.get_values(T_values)
+        T, E, M, C, X = zip(*T_values)
 
-        fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(6,4), 
+        fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(10, 6), 
                             constrained_layout=True)
         fig.suptitle(f'Ising Model size={self.N}')
 
-        axs[0,0].plot(T, M)
+        axs[0,0].plot(T, E)
         axs[0,0].grid()
-        axs[0,0].set_ylabel('M')
+        axs[0,0].set_ylabel('E')
 
-        axs[0,1].plot(T, E)
+        axs[0,1].plot(T, M)
         axs[0,1].grid()
-        axs[0,1].set_ylabel('E')
+        axs[0,1].set_ylabel('M')
 
         axs[1,0].plot(T, C)
         axs[1,0].grid()
@@ -275,23 +246,23 @@ class Ising(object):
         axs[1,1].grid()
         axs[1,1].set_ylabel('X')
 
-        plt.show()
-
-
 if __name__ == "__main__":
-    start = dt.datetime.now()
+    N=32
+    Ts = np.linspace(1, 4, 21)
+    Sweeps = 80
 
-    sweeps = 5000
+    np.random.seed(1)
+    spins = Ising(N, live_show=False)
+    results = spins.simulate(temperatures=Ts, sweeps=Sweeps)
+    spins.plot_quantities(results)
+    plt.show()
 
-    Ns = [8, 12, 16, 20]
+    '''
+    Ns = [8, 12, 16]
     numNs = len(Ns)
-
     Ts = np.linspace(1, 4, 21)
     numTs = len(Ts)
-
     MC = np.zeros(shape = (numNs, numTs))
-
-    
     for j, N in enumerate(Ns):
         print(f"Lattice size N={N}")
         s = Ising(N)
@@ -309,3 +280,4 @@ if __name__ == "__main__":
     plt.legend()
     plt.grid()
     plt.show()
+    '''

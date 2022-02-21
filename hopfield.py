@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import distance
-plt.style.use('classic')
+plt.style.use('science')
 
 
 class Hopfield:
@@ -109,8 +109,8 @@ class Hopfield:
                 for j in range(asyn_iter):
                     index = np.random.randint(input_length)
                     state = self.update_neuron(state, index)
-                overlap = self.overlap(state, pattern)
-                overlap_list.append(overlap)
+                    overlap = self.overlap(state, pattern)
+                    overlap_list.append(overlap)
                 new_e = -0.5*np.matmul(np.matmul(np.transpose(state), self.W) ,state)
                 new_e = self.energy(state)
                 #if i%10==0:
@@ -118,8 +118,7 @@ class Hopfield:
                 if new_e == e:
                     #print("\nEnergy unchanged, updates stop")
                     #print(f'\nNumber of asynchronous iterations={i}')
-                    #break
-                    pass
+                    break
                 e = new_e
                 e_list.append(e)
 
@@ -134,10 +133,10 @@ class Hopfield:
                 if new_e == e:
                     #print("\nEnergy unchanged, updates stop")
                     #print(f'\nNumber of synchronous iterations={i}')
-                    #break
-                    pass
+                    break
                 e = new_e
                 e_list.append(e)
+    
         return state, e_list, overlap_list
 
     def energy(self, vec):
@@ -195,79 +194,74 @@ def generate_data(length, num):
         Array of randomly generated data
     """
     data = []
-    for n in range(num):
+    for n in range(int(num)):
         pattern = np.random.choice([-1, 1], size=length)
         data.append(pattern) 
 
     return data
-        
+    
 
 if __name__=="__main__":
+    Is = [4000, 6000, 8000, 1000]
+    np.random.seed(1)
 
-    I = 128
-    Nmin, Nmax = 2, 20
-    step = 1
-    Ns = np.arange(Nmin, Nmax, step)
-    capacities_sync = []
-    capacities_async = []
+    fig, axs = plt.subplots(nrows=1, ncols=1)
 
-    for N in Ns:
-        print('----------------------------------------')
-        print(f'Testing capacity = {N}')
-        model = Hopfield(I)
-        data = generate_data(I, N)
+    for I in Is:
+        Nmin, Nmax = 0.05*I, 0.25*I
+        step = 5
+        Ns = np.arange(Nmin, Nmax, step)
+        capacities_sync = []
+        capacities_async = []
 
-        for i, item in enumerate(data):
-            #if i%20 == 0:
-            #    print(f'Training pattern {i}')
-            model.make_weights(data[i])
+        for N in Ns:
+            print('----------------------------------------')
+            print(f'Testing capacity = {N}')
+            model = Hopfield(I)
+            data = generate_data(I, N)
 
-        pattern = data[0]
-        partial_pattern = np.where(pattern + np.random.normal(-1,1, I) < 0.5, 0, 1)
+            for i, item in enumerate(data):
+                #if i%20 == 0:
+                #    print(f'Training pattern {i}')
+                model.make_weights(data[i])
 
-        initial_overlap = model.overlap(partial_pattern, pattern)
-        print(f'Initial overlap = {initial_overlap} \n')
+            pattern = data[0]
+            partial_pattern = np.where(pattern + np.random.normal(0,1, I) < 0.5, 0, 1)
 
-        output_async, e_list_async, overlap_list_async = model.predict(partial_pattern, pattern, 100, asyn=True)
-        output_sync, e_list_sync, overlap_list_sync = model.predict(partial_pattern, pattern, 100, asyn=False)
+            initial_overlap = model.overlap(partial_pattern, pattern)
+            print(f'Initial overlap = {initial_overlap} \n')
 
-        final_overlap_asyn = model.overlap(output_async, pattern)
-        final_overlap_syn = model.overlap(output_sync, pattern)
+            #output_async, e_list_async, overlap_list_async = model.predict(partial_pattern, pattern, iter=200, asyn=True)
+            output_sync, e_list_sync, overlap_list_sync = model.predict(partial_pattern, pattern, iter=200)
 
-        capacities_async.append(final_overlap_asyn)
-        capacities_sync.append(final_overlap_syn)
+            #final_overlap_asyn = model.overlap(output_async, pattern)
+            final_overlap_syn = model.overlap(output_sync, pattern)
 
-        print(f'Final overlap asynchronous updates = {final_overlap_asyn}')
-        print(f'Final overlap synchronous updates = {final_overlap_syn}')
-        print('----------------------------------------')
-        print('')
+            #capacities_async.append(final_overlap_asyn)
+            capacities_sync.append(final_overlap_syn)
 
-    NIs = Ns/I
-    plt.plot(NIs, capacities_sync, label='Synchronous updates')
-    plt.plot(NIs, capacities_async, label='Asynchronous updates')
-    plt.ylim((0, 1.1))
-    plt.xlim((Nmin/I, Nmax/I))
-    plt.grid()
-    plt.legend()
+            #print(f'Final overlap asynchronous updates = {final_overlap_asyn}')
+            print(f'Final overlap synchronous updates = {final_overlap_syn}')
+            print('----------------------------------------')
+            print('')
+
+            NIs = Ns/I
+
+    axs.plot(NIs, capacities_sync)
+    #axs[1].plot(NIs, capacities_sync)
+
+    axs.set_ylim((0, 1.1))
+    #axs[1].set_ylim((0, 1.1))
+    axs.set_xlim((0.05, 0.2))
+    #axs[1].set_xlim((0.05, 0.2))
+    axs.set_ylabel('Overlap')
+    axs.set_xlabel('N/I')
+    #axs[1].set_xlabel('N/I')
+    #plt.legend()
     plt.show()
 
+    
 
-
-    '''
-    fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True)
-    axs[0].set_ylabel('Energy')
-    axs[0].grid()
-    axs[0].plot(e_list_sync, label='Synchronous updates')
-    axs[0].plot(e_list_async, label='Asynchronous updates')
-
-    axs[1].set_ylabel('Overlap')
-    axs[1].grid()
-    axs[1].set_ylim(0, 1.1)
-    axs[1].plot(overlap_list_sync)
-    axs[1].plot(overlap_list_async)
-    axs[1].set_xlabel('Iterations')
-    plt.show()
-    '''
 
     
     

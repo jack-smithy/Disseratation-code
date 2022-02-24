@@ -4,8 +4,8 @@ from hopfield import Hopfield, generate_data
 plt.style.use('science')
 
 
-Is = [512, 1024, 2048]
-repeats = 20
+Is = [1024, 2048, 3072]
+repeats = 2
 
 for I in Is:
     Nmin, Nmax, step = int(0.05*I), int(0.22*I), int(0.005*I)
@@ -45,17 +45,6 @@ for I in Is:
     q2 = np.mean(capacities2, axis=1)
     q4 = np.mean(capacities4, axis=1)
 
-    np.save('hopfield_data/q', q)
-    np.save('hopfield_data/q2', q2)
-    np.save('hopfield_data/q4', q4)
-
-    NIs = Ns/I
-    g = q4/q2**2
-    plt.plot(NIs, g, label=f'I={I}')
-
-plt.xlim(0.05, 0.2)
-#plt.ylim(0, 1.1)
-plt.legend()
-plt.xlabel('N/I')
-plt.ylabel('Overlap')
-plt.show()
+    np.save(f'hopfield_data/q_I={I}', q)
+    np.save(f'hopfield_data/q2_I={I}', q2)
+    np.save(f'hopfield_data/q4_I={I}', q4)

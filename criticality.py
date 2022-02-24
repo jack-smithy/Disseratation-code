@@ -1,14 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from hopfield import Hopfield, generate_data
-#plt.style.use('science')
+plt.style.use('science')
 
 
-Is = [256, 512]
+Is = [512, 1024, 2048]
 repeats = 20
 
 for I in Is:
-    Nmin, Nmax, step = int(0.05*I), int(0.22*I), 4
+    Nmin, Nmax, step = int(0.05*I), int(0.22*I), int(0.005*I)
     Ns = np.arange(Nmin, Nmax, step)
     numNs = len(Ns)
 
@@ -18,9 +18,9 @@ for I in Is:
 
     for i in range(repeats):
         capacities_sync_arr = []
+        print('----------------------------------------')
+        print(f'Network size = {I}, run = {i+1}/{repeats} \n')
         for N in Ns:
-            print('----------------------------------------')
-            print(f'Network size = {I}, Testing capacity = {N}/{Nmax}, run = {i+1}/{repeats} \n')
             np.random.seed(i)
             model = Hopfield(I)
             data = generate_data(I, N)
@@ -44,6 +44,11 @@ for I in Is:
     q = np.mean(capacities, axis=1)
     q2 = np.mean(capacities2, axis=1)
     q4 = np.mean(capacities4, axis=1)
+
+    np.save('hopfield_data/q', q)
+    np.save('hopfield_data/q2', q2)
+    np.save('hopfield_data/q4', q4)
+
     NIs = Ns/I
     g = q4/q2**2
     plt.plot(NIs, g, label=f'I={I}')
@@ -51,4 +56,6 @@ for I in Is:
 plt.xlim(0.05, 0.2)
 #plt.ylim(0, 1.1)
 plt.legend()
+plt.xlabel('N/I')
+plt.ylabel('Overlap')
 plt.show()

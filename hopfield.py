@@ -1,8 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.spatial import distance
-plt.style.use('science')
-
 
 class Hopfield:
     def __init__(self, length):
@@ -199,68 +196,7 @@ def generate_data(length, num):
         data.append(pattern) 
 
     return data
-    
 
-if __name__=="__main__":
-    Is = [4000, 6000, 8000, 1000]
-    np.random.seed(1)
-
-    fig, axs = plt.subplots(nrows=1, ncols=1)
-
-    for I in Is:
-        Nmin, Nmax = 0.05*I, 0.25*I
-        step = 5
-        Ns = np.arange(Nmin, Nmax, step)
-        capacities_sync = []
-        capacities_async = []
-
-        for N in Ns:
-            print('----------------------------------------')
-            print(f'Testing capacity = {N}')
-            model = Hopfield(I)
-            data = generate_data(I, N)
-
-            for i, item in enumerate(data):
-                #if i%20 == 0:
-                #    print(f'Training pattern {i}')
-                model.make_weights(data[i])
-
-            pattern = data[0]
-            partial_pattern = np.where(pattern + np.random.normal(0,1, I) < 0.5, 0, 1)
-
-            initial_overlap = model.overlap(partial_pattern, pattern)
-            print(f'Initial overlap = {initial_overlap} \n')
-
-            #output_async, e_list_async, overlap_list_async = model.predict(partial_pattern, pattern, iter=200, asyn=True)
-            output_sync, e_list_sync, overlap_list_sync = model.predict(partial_pattern, pattern, iter=200)
-
-            #final_overlap_asyn = model.overlap(output_async, pattern)
-            final_overlap_syn = model.overlap(output_sync, pattern)
-
-            #capacities_async.append(final_overlap_asyn)
-            capacities_sync.append(final_overlap_syn)
-
-            #print(f'Final overlap asynchronous updates = {final_overlap_asyn}')
-            print(f'Final overlap synchronous updates = {final_overlap_syn}')
-            print('----------------------------------------')
-            print('')
-
-            NIs = Ns/I
-
-    axs.plot(NIs, capacities_sync)
-    #axs[1].plot(NIs, capacities_sync)
-
-    axs.set_ylim((0, 1.1))
-    #axs[1].set_ylim((0, 1.1))
-    axs.set_xlim((0.05, 0.2))
-    #axs[1].set_xlim((0.05, 0.2))
-    axs.set_ylabel('Overlap')
-    axs.set_xlabel('N/I')
-    #axs[1].set_xlabel('N/I')
-    #plt.legend()
-    plt.show()
-
-    
 
 
     

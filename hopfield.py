@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.spatial import distance
 
 class Hopfield:
     def __init__(self, length):
@@ -96,35 +95,32 @@ class Hopfield:
         """
         input_length = len(input)
         e_list = []
-        overlap_list = []
         e = self.energy(input)
         e_list.append(e)
         state = input
 
-        if asyn:
-            for i in range(iter):
-                for j in range(asyn_iter):
-                    index = np.random.randint(input_length)
-                    state = self.update_neuron(state, index)
-                    overlap = self.overlap(state, pattern)
-                    overlap_list.append(overlap)
-                new_e = -0.5*np.matmul(np.matmul(np.transpose(state), self.W) ,state)
-                new_e = self.energy(state)
-                #if i%10==0:
-                #    print(f'Iteration number {i}, Energy={new_e}')
-                if new_e == e:
-                    #print("\nEnergy unchanged, updates stop")
-                    #print(f'\nNumber of asynchronous iterations={i}')
-                    break
-                e = new_e
-                e_list.append(e)
+        # if asyn == True:
+        #     for i in range(iter):
+        #         for j in range(asyn_iter):
+        #             index = np.random.randint(input_length)
+        #             state = self.update_neuron(state, index)
+        #         overlap = self.overlap(state, pattern)
+        #         new_e = -0.5*np.matmul(np.matmul(np.transpose(state), self.W) ,state)
+        #         new_e = self.energy(state)
+        #         #if i%10==0:
+        #         #    print(f'Iteration number {i}, Energy={new_e}')
+        #         if new_e == e:
+        #             #print("\nEnergy unchanged, updates stop")
+        #             #print(f'\nNumber of asynchronous iterations={i}')
+        #             break
+        #         e = new_e
+        #         e_list.append(e)
 
-        else:
+        if asyn == False:
             for i in range(iter):
                 state = self.update_neuron(state)
                 new_e = self.energy(state)
                 overlap = self.overlap(state, pattern)
-                overlap_list.append(overlap)
                 #if i%10==0:
                 #    print(f'Iteration number {i}, Energy={new_e}')
                 if new_e == e:
@@ -134,7 +130,7 @@ class Hopfield:
                 e = new_e
                 e_list.append(e)
     
-        return state, e_list, overlap_list
+        return state, e_list
 
     def energy(self, vec):
         """

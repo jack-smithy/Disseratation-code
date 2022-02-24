@@ -1,54 +1,54 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from hopfield import Hopfield, generate_data
-plt.style.use('science')
+#plt.style.use('science')
 
-Is = [1000, 2000, 3000]
-np.random.seed(1)
 
-fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(7,3))
+Is = [256, 512]
+repeats = 20
 
 for I in Is:
-    Nmin, Nmax, step = int(0.05*I), int(0.25*I), 5
+    Nmin, Nmax, step = int(0.05*I), int(0.22*I), 4
     Ns = np.arange(Nmin, Nmax, step)
-    capacities_sync = []
-    capacities_async = []
+    numNs = len(Ns)
 
-    for N in Ns:
-        print('----------------------------------------')
-        print(f'Network size = {I}, Testing capacity = {N} \n')
-        model = Hopfield(I)
-        data = generate_data(I, N)
+    capacities = np.zeros(shape=(numNs, repeats), dtype=np.float64)
+    capacities2 = np.zeros(shape=(numNs, repeats), dtype=np.float64)
+    capacities4 = np.zeros(shape=(numNs, repeats), dtype=np.float64)
 
-        for i, item in enumerate(data):
-            model.make_weights(data[i])
+    for i in range(repeats):
+        capacities_sync_arr = []
+        for N in Ns:
+            print('----------------------------------------')
+            print(f'Network size = {I}, Testing capacity = {N}/{Nmax}, run = {i+1}/{repeats} \n')
+            np.random.seed(i)
+            model = Hopfield(I)
+            data = generate_data(I, N)
 
-        pattern = data[0]
-        partial_pattern = np.where(pattern + np.random.normal(0,1, I) < 0.5, 0, 1)
+            for j, item in enumerate(data):
+                model.make_weights(data[j])
 
-        initial_overlap = model.overlap(partial_pattern, pattern)
+            pattern = data[0]
+            partial_pattern = np.where(pattern + np.random.normal(0,1, I) < 0.5, 0, 1)
 
-        output_async, e_list_async, overlap_list_async = model.predict(partial_pattern, pattern, iter=200, asyn=True)
-        output_sync, e_list_sync, overlap_list_sync = model.predict(partial_pattern, pattern, iter=200)
+            initial_overlap = model.overlap(partial_pattern, pattern)
 
-        final_overlap_asyn = model.overlap(output_async, pattern)
-        final_overlap_syn = model.overlap(output_sync, pattern)
+            output_sync, e_list_sync = model.predict(partial_pattern, pattern, iter=200)
+            final_overlap_sync = model.overlap(output_sync, pattern)
+            capacities_sync_arr.append(final_overlap_sync)
 
-        capacities_async.append(final_overlap_asyn)
-        capacities_sync.append(final_overlap_syn)
+        capacities[:,i] = capacities_sync_arr
+        capacities2[:,i] = np.power(capacities_sync_arr, 2)
+        capacities4[:,i] = np.power(capacities_sync_arr, 4)
 
+    q = np.mean(capacities, axis=1)
+    q2 = np.mean(capacities2, axis=1)
+    q4 = np.mean(capacities4, axis=1)
     NIs = Ns/I
-    axs[0].plot(NIs, capacities_sync, label = f'I={I}')
-    axs[1].plot(NIs, capacities_async, label = f'I={I}')
+    g = q4/q2**2
+    plt.plot(NIs, g, label=f'I={I}')
 
-axs[0].set_xlim((0.05, 0.2))
-axs[0].set_xlabel('N/I')
-
-axs[0].set_ylim((0, 1.1))
-axs[0].set_ylabel('Overlap')
-
-axs[1].set_xlim((0.05, 0.2))
-axs[1].set_xlabel('N/I')
-
+plt.xlim(0.05, 0.2)
+#plt.ylim(0, 1.1)
 plt.legend()
 plt.show()

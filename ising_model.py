@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
-plt.style.use('classic')
+plt.style.use('science')
 
 class Ising(object):
-    def __init__(self, N, T=1.0, f=0.2, live_show=False):
+    def __init__(self, N, T=1.0, f=0.2, config='ones', live_show=False):
         """
         Initialises the lattice with the necessary attributes.
 
@@ -24,16 +24,22 @@ class Ising(object):
         self.f=f
         self.live_show = live_show
 
-        self.setup_lattice()
+        self.setup_lattice(config)
 
         if live_show == True:
             self.setup_plotting()
 
-    def setup_lattice(self):
+    def setup_lattice(self, config):
         """
         Setup the lattice with a configuration of all up spins.
         """
-        self.lattice = np.ones([self.N, self.N])
+        if config=='ones':
+            self.lattice = np.ones([self.N, self.N])
+        elif config=='random':
+            self.lattice = np.random.choice([-1, 1], size=[self.N, self.N])
+        else:
+            print('Not a recognised configuration: must be "random" or "ones". Defaulting to "ones".')
+            self.lattice = np.ones([self.N, self.N])
 
     def setup_plotting(self):
         """
@@ -45,7 +51,7 @@ class Ising(object):
         plt.axis('off')
         plt.show()
 
-    def plot_lattice(self, thermalising):
+    def plot_lattice(self, thermalising, name=None, save=False):
         """
         Plot the lattice spins on an NxN grid.
 
@@ -55,15 +61,17 @@ class Ising(object):
             Shows the lattice in a different colour when the system is thermalising
         """
         X, Y = np.meshgrid(range(self.N), range(self.N))
-        cm = plt.cm.Blues
+        cm = plt.cm.Greys
 
         if thermalising:
             cm = plt.cm.Greys
-        
+        plt.gca().set_aspect('equal')
         plt.cla()
         plt.pcolormesh(X, Y, self.lattice, cmap=cm, shading='auto')
         plt.axis('off')
         plt.draw()
+        if save:
+            plt.savefig(f'plots/{name}.png')
         plt.pause(0.01)
         plt.cla()
     
@@ -139,7 +147,7 @@ class Ising(object):
         if dE <= 0 or np.random.random() < np.exp((-1.0/self.T)*dE):
             self.lattice[pos[1], pos[0]] *= -1
 
-    def monte_carlo_run(self, sweeps, sampleRate=500):
+    def monte_carlo_run(self, sweeps, sampleRate=1):
         """
         Runs a certain number of sweeps of the lattice and stores the energy and magnetisation.
 
@@ -175,6 +183,25 @@ class Ising(object):
             if self.live_show and i%2000 == 0:
                 self.plot_lattice(thermalising=False)
 
+            # if i==256*self.N**2:
+            #     self.plot_lattice(thermalising=False, name=f'snapshot_i=256', save=True)
+            # if i==4*self.N**2:
+            #     self.plot_lattice(thermalising=False, name=f'snapshot_i={int(i/self.N**2)}', save=True)
+            # if i==8*self.N**2:
+            #     self.plot_lattice(thermalising=False, name=f'snapshot_i={int(i/self.N**2)}', save=True)
+            # if i==16*self.N**2:
+            #     self.plot_lattice(thermalising=False, name=f'snapshot_i={int(i/self.N**2)}', save=True)
+            # if i==32*self.N**2:
+            #     self.plot_lattice(thermalising=False, name=f'snapshot_i={int(i/self.N**2)}', save=True)
+            # if i==64*self.N**2:
+            #     self.plot_lattice(thermalising=False, name=f'snapshot_i={int(i/self.N**2)}', save=True)
+            # if i==128*self.N**2:
+            #     self.plot_lattice(thermalising=False, name=f'snapshot_i={int(i/self.N**2)}', save=True)
+            # if i==256*self.N**2:
+            #     self.plot_lattice(thermalising=False, name=f'snapshot_i={int(i/self.N**2)}', save=True)
+            # if i==2*self.N**2:
+            #     self.plot_lattice(thermalising=False, name=f'snapshot_i={int(i/self.N**2)}', save=True)
+        print('done')
         return Ene, Mag
         
     def simulate(self, temperatures, sweeps):
@@ -197,7 +224,6 @@ class Ising(object):
         lattice = self.setup_lattice()
 
         for T in temperatures:
-            print(f"Currently on T={T}")
             self.T = T
             Ene, Mag = self.monte_carlo_run(sweeps)
 
@@ -246,38 +272,22 @@ class Ising(object):
         axs[1,1].grid()
         axs[1,1].set_ylabel('X')
 
-if __name__ == "__main__":
-    N=32
-    Ts = np.linspace(1, 4, 21)
-    Sweeps = 80
+        plt.show()
 
-    np.random.seed(1)
-    spins = Ising(N, live_show=False)
-    results = spins.simulate(temperatures=Ts, sweeps=Sweeps)
-    spins.plot_quantities(results)
-    plt.show()
+if __name__ == "__main__": 
+    fig, axs = plt.subplots(nrows=1, ncols=1, figsize = (7,4))
+    ising1 = Ising(N=96, T=2.4, f=0, config='ones')
+    ene, mag = ising1.monte_carlo_run(sweeps=260)
 
-    '''
-    Ns = [8, 12, 16]
-    numNs = len(Ns)
-    Ts = np.linspace(1, 4, 21)
-    numTs = len(Ts)
-    MC = np.zeros(shape = (numNs, numTs))
-    for j, N in enumerate(Ns):
-        print(f"Lattice size N={N}")
-        s = Ising(N)
-        results = s.simulate(Ts, sweeps)
-        T, E, M, C, X = s.get_values(results)
-        MC[j,:] = C
-        
-    plt.plot(T, MC[0,:], label=f"N={Ns[0]}")
-    plt.plot(T, MC[1,:], label=f"N={Ns[1]}")
-    plt.plot(T, MC[2,:], label=f"N={Ns[2]}")
-    plt.plot(T, MC[3,:], label=f"N={Ns[3]}")
-    plt.xlim(1, 4)
-    ymin, ymax = plt.ylim()
-    plt.ylim(0, ymax)
-    plt.legend()
-    plt.grid()
+    sweeps = np.arange(0, 260*96**2+1)
+    axs.plot(sweeps/32, ene, label='Energy')
+    axs.plot(sweeps/32, mag, label='Magnetisation')
+    axs.set_ylim(bottom=-2.1, top=1.1)
+    axs.set_xlim(left=0, right=10000)
+    axs.set_ylabel('$m$ (upper), $E$ (lower)')
+    axs.legend()
+    axs.set_xlabel('Sweeps')
+
+    #plt.savefig('plots/energyevol.png')
     plt.show()
-    '''
+    

@@ -1,4 +1,8 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from numba import jit
+import datetime as dt
+plt.style.use('science')
 
 class Hopfield:
     def __init__(self, length):
@@ -65,7 +69,7 @@ class Hopfield:
 
         return state
 
-    def predict(self, input, pattern, iter, asyn=False, asyn_iter = 200):
+    def predict(self, input, iter, asyn=False, asyn_iter = 200):
         """
         Iterates the update procedure
 
@@ -93,7 +97,6 @@ class Hopfield:
         overlap_list : list
             List of overlap between final state prediction and stored memory
         """
-        input_length = len(input)
         e_list = []
         e = self.energy(input)
         e_list.append(e)
@@ -120,12 +123,7 @@ class Hopfield:
             for i in range(iter):
                 state = self.update_neuron(state)
                 new_e = self.energy(state)
-                overlap = self.overlap(state, pattern)
-                #if i%10==0:
-                #    print(f'Iteration number {i}, Energy={new_e}')
                 if new_e == e:
-                    #print("\nEnergy unchanged, updates stop")
-                    #print(f'\nNumber of synchronous iterations={i}')
                     break
                 e = new_e
                 e_list.append(e)
@@ -193,6 +191,59 @@ def generate_data(length, num):
 
     return data
 
+if __name__=='__main__':
+    start = dt.datetime.now()
+    Is = [512]
+    repeats = 10
+
+    for I in Is:
+        N1min, N1max, step1 = int(0.05*I), int(0.22*I), 4
+        Ns = np.arange(N1min, N1max, step1)
+        numNs = len(Ns)
+
+        capacities = np.zeros(shape=(numNs, repeats), dtype=np.float64)
+        capacities2 = np.zeros(shape=(numNs, repeats), dtype=np.float64)
+        capacities4 = np.zeros(shape=(numNs, repeats), dtype=np.float64)
+
+        for i in range(repeats):
+            capacities_sync_arr = []
+            print('----------------------------------------')
+            print(f'Network size = {I}, run = {i+1}/{repeats} \n')
+            for N in Ns:
+                np.random.seed(i)
+                model = Hopfield(I)
+                data = generate_data(I, N)
+
+                for j, item in enumerate(data):
+                    model.make_weights(data[j])
+
+                pattern = data[0]
+                partial_pattern = np.where(pattern + np.random.normal(0,1, I) < 0.5, 0, 1)
+
+                initial_overlap = model.overlap(partial_pattern, pattern)
+
+                output_sync, e_list_sync = model.predict(partial_pattern, iter=200)
+                final_overlap_sync = model.overlap(output_sync, pattern)
+                capacities_sync_arr.append(final_overlap_sync)
+
+            capacities[:,i] = capacities_sync_arr
+            capacities2[:,i] = np.power(capacities_sync_arr, 2)
+            capacities4[:,i] = np.power(capacities_sync_arr, 4)
+
+        q = np.mean(capacities, axis=1)
+        q2 = np.mean(capacities2, axis=1)
+        q4 = np.mean(capacities4, axis=1)
+
+        print(dt.datetime.now()-start)
+
+        NIs = Ns/I
+        plt.plot(NIs, q)
+        plt.xlim((0.05, 0.2))
+    plt.show()
+
+        # np.save(f'hopfield_data/q_I={I}', q)
+        # np.save(f'hopfield_data/q2_I={I}', q2)
+        # np.save(f'hopfield_data/q4_I={I}', q4)
 
 
     

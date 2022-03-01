@@ -1,3 +1,4 @@
+from tracemalloc import Snapshot
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
@@ -183,6 +184,7 @@ class Ising(object):
             if self.live_show and i%2000 == 0:
                 self.plot_lattice(thermalising=False)
 
+        self.plot_lattice(thermalising=False, name='snapshot_low_high', save=True)
             # if i==256*self.N**2:
             #     self.plot_lattice(thermalising=False, name=f'snapshot_i=256', save=True)
             # if i==4*self.N**2:
@@ -201,7 +203,6 @@ class Ising(object):
             #     self.plot_lattice(thermalising=False, name=f'snapshot_i={int(i/self.N**2)}', save=True)
             # if i==2*self.N**2:
             #     self.plot_lattice(thermalising=False, name=f'snapshot_i={int(i/self.N**2)}', save=True)
-        print('done')
         return Ene, Mag
         
     def simulate(self, temperatures, sweeps):
@@ -276,17 +277,18 @@ class Ising(object):
 
 if __name__ == "__main__": 
     fig, axs = plt.subplots(nrows=1, ncols=1, figsize = (7,4))
-    ising1 = Ising(N=96, T=2.4, f=0, config='ones')
-    ene, mag = ising1.monte_carlo_run(sweeps=260)
 
-    sweeps = np.arange(0, 260*96**2+1)
-    axs.plot(sweeps/32, ene, label='Energy')
-    axs.plot(sweeps/32, mag, label='Magnetisation')
-    axs.set_ylim(bottom=-2.1, top=1.1)
-    axs.set_xlim(left=0, right=10000)
-    axs.set_ylabel('$m$ (upper), $E$ (lower)')
-    axs.legend()
-    axs.set_xlabel('Sweeps')
+    ising1 = Ising(N=96, T=10, f=0.2, config='ones')
+    ene, mag = ising1.monte_carlo_run(sweeps=100)
+
+    # sweeps = np.arange(0, 260*96**2+1)
+    # axs.plot(sweeps/32, ene, label='Energy')
+    # axs.plot(sweeps/32, mag, label='Magnetisation')
+    # axs.set_ylim(bottom=-2.1, top=1.1)
+    # axs.set_xlim(left=0, right=10000)
+    # axs.set_ylabel('$m$ (upper), $E$ (lower)')
+    # axs.legend()
+    # axs.set_xlabel('Sweeps')
 
     #plt.savefig('plots/energyevol.png')
     plt.show()

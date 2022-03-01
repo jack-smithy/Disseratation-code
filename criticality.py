@@ -1,11 +1,8 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from hopfield import Hopfield, generate_data
-plt.style.use('science')
-
 
 Is = [1024, 2048, 3072]
-repeats = 2
+repeats = 32
 
 for I in Is:
     Nmin, Nmax, step = int(0.05*I), int(0.22*I), int(0.005*I)

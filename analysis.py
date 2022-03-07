@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use(['science'])
+plt.rcParams['figure.figsize'] = 3,3
+plt.rcParams['figure.constrained_layout.use'] = True
 
 k=0.6
 Is = [512, 1024, 2048]
@@ -11,17 +13,19 @@ for I in Is:
     q4 = np.load(f'hopfield_data/q4_I={I}.npy')
 
     g = q4/q2**2
+    X = q2 - q**2
+
     Nmin, Nmax, step = int(0.05*I), int(0.22*I), int(0.005*I)
     Ns = np.arange(Nmin, Nmax, step)
-    NIs = Ns/I
-    fss = I**(k)*(NIs-0.14)
-    plt.plot(NIs, q, label=f'I={I}')
+    alphas = Ns/I
+    fss = I**k*(alphas-0.12)
+    plt.plot(fss, q, label=f'$I={I}$')
     
-plt.xlim((0.05, 0.2))
-plt.ylim((0.2, 1.1))
-plt.vlines(x = 0.14, ymin=0.2, ymax=1.1, linestyles='--', colors='k', lw=1)
+plt.xlim((-2.5, 2.5))
+plt.ylim((0.3, 1.05))
+#plt.vlines(x = 0.12, ymin=0, ymax=0.8, linestyles='--', colors='k', lw=1)
 plt.legend()
-plt.ylabel(r'$\langle q^4 \rangle / \langle q^2 \rangle ^2$')
-plt.xlabel('N/I')
-plt.savefig('plots/hopfield_transition.pdf')
+plt.ylabel(r'$q$')
+plt.xlabel(r'$I^{1/\nu} (\alpha - \alpha_C)$')
+plt.savefig(f'plots/hopfield_cumulant_collapse.pdf')
 plt.show()

@@ -1,8 +1,10 @@
-from tracemalloc import Snapshot
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
+
 plt.style.use('science')
+plt.rcParams['figure.figsize'] = 6,3
+plt.rcParams['figure.constrained_layout.use'] = True
 
 class Ising(object):
     def __init__(self, N, T=1.0, f=0.2, config='ones', live_show=False):
@@ -184,7 +186,7 @@ class Ising(object):
             if self.live_show and i%2000 == 0:
                 self.plot_lattice(thermalising=False)
 
-        self.plot_lattice(thermalising=False, name='snapshot_low_high', save=True)
+        #self.plot_lattice(thermalising=False, name='snapshot_low_high', save=True)
             # if i==256*self.N**2:
             #     self.plot_lattice(thermalising=False, name=f'snapshot_i=256', save=True)
             # if i==4*self.N**2:
@@ -276,20 +278,33 @@ class Ising(object):
         plt.show()
 
 if __name__ == "__main__": 
-    fig, axs = plt.subplots(nrows=1, ncols=1, figsize = (7,4))
+    N=32
+    T=1
+    SWEEPS_ENE = 51
+    SWEEPS_MAG = 101
+    sweeps_ene_arr = np.arange(0, SWEEPS_ENE*N**2+1)/N**2
+    sweeps_mag_arr = np.arange(0, SWEEPS_MAG*N**2+1)/N**2
 
-    ising1 = Ising(N=96, T=10, f=0.2, config='ones')
-    ene, mag = ising1.monte_carlo_run(sweeps=100)
+    ising_ene = Ising(N=N, T=T, f=0, config='random')
+    ene_ene, mag_ene = ising_ene.monte_carlo_run(sweeps=SWEEPS_ENE)
 
-    # sweeps = np.arange(0, 260*96**2+1)
-    # axs.plot(sweeps/32, ene, label='Energy')
-    # axs.plot(sweeps/32, mag, label='Magnetisation')
-    # axs.set_ylim(bottom=-2.1, top=1.1)
-    # axs.set_xlim(left=0, right=10000)
-    # axs.set_ylabel('$m$ (upper), $E$ (lower)')
-    # axs.legend()
-    # axs.set_xlabel('Sweeps')
+    ising_mag = Ising(N=N, T=T, f=0, config='random')
+    ene_mag, mag_mag = ising_mag.monte_carlo_run(sweeps=SWEEPS_MAG)
 
-    #plt.savefig('plots/energyevol.png')
+    fig, axs = plt.subplots(nrows=1, ncols=2)
+
+    axs[0].plot(sweeps_ene_arr, ene_ene, color='k')
+    axs[0].set_ylim(bottom=-2.1, top=0)
+    axs[0].set_xlim(left=0, right=SWEEPS_ENE-1)
+    axs[0].set_xlabel('Sweeps')
+    axs[0].set_ylabel('$E$')
+
+    axs[1].plot(sweeps_mag_arr, mag_mag, color='k')
+    axs[1].set_ylim(bottom=0, top=1.1)
+    axs[1].set_xlim(left=0, right=SWEEPS_MAG-1)
+    axs[1].set_xlabel('Sweeps')
+    axs[1].set_ylabel('$m$')
+
+    plt.savefig('plots/energyevol.pdf')
     plt.show()
     

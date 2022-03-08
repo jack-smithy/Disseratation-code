@@ -1,33 +1,31 @@
 import numpy as np
 import matplotlib.pyplot as plt
+plt.style.use(['science'])
+plt.rcParams['figure.figsize'] = 3,3
+plt.rcParams['figure.constrained_layout.use'] = True
 
-q11 = np.load('hopfield_data/q_I=1024.npy')
-q21 = np.load('hopfield_data/q2_I=1024.npy')
-q41 = np.load('hopfield_data/q4_I=1024.npy')
+k=0.6
+Is = [512, 1024, 2048]
 
-q12 = np.load('hopfield_data/q_I=2048.npy')
-q22 = np.load('hopfield_data/q2_I=2048.npy')
-q42 = np.load('hopfield_data/q4_I=2048.npy')
+for I in Is:
+    q = np.load(f'hopfield_data/q_I={I}.npy')
+    q2 = np.load(f'hopfield_data/q2_I={I}.npy')
+    q4 = np.load(f'hopfield_data/q4_I={I}.npy')
 
-q13 = np.load('hopfield_data/q_I=3072.npy')
-q23 = np.load('hopfield_data/q2_I=3072.npy')
-q43 = np.load('hopfield_data/q4_I=3072.npy')
+    g = q4/q2**2
+    X = q2 - q**2
 
-I = 2048
-Nmin, Nmax, step = int(0.05*I), int(0.22*I), int(0.005*I)
-Ns = np.arange(Nmin, Nmax, step)
-
-NIs = Ns/I
-
-g1 = q41/q21**2
-g2 = q42/q22**2
-g3 = q43/q23**2
-
-
-plt.plot(NIs, g1)
-plt.plot(NIs, g2)
-plt.plot(NIs, g3)
-#plt.ylim(0, 2.9)
-plt.xlim(0.05, 0.2)
-#plt.vlines(x=0.138, ymin=0, ymax=2.9, linestyles='--', colors='k')
+    Nmin, Nmax, step = int(0.05*I), int(0.22*I), int(0.005*I)
+    Ns = np.arange(Nmin, Nmax, step)
+    alphas = Ns/I
+    fss = I**k*(alphas-0.12)
+    plt.plot(fss, q, label=f'$I={I}$')
+    
+plt.xlim((-2.5, 2.5))
+plt.ylim((0.3, 1.05))
+#plt.vlines(x = 0.12, ymin=0, ymax=0.8, linestyles='--', colors='k', lw=1)
+plt.legend()
+plt.ylabel(r'$q$')
+plt.xlabel(r'$I^{1/\nu} (\alpha - \alpha_C)$')
+plt.savefig(f'plots/hopfield_cumulant_collapse.pdf')
 plt.show()

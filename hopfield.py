@@ -169,7 +169,7 @@ class Hopfield:
         overlap = abs(np.dot(u, v)/self.length)
         return overlap
 
-def generate_data(length, num):
+def generate_data(num, length):
     """
     Generates random data of correct length
 
@@ -185,12 +185,10 @@ def generate_data(length, num):
     data : ndarray
         Array of randomly generated data
     """
-    data = []
+    data = np.zeros(shape=(num, length))
     for n in range(int(num)):
-        pattern = np.random.choice([-1, 1], size=length)
-        data.append(pattern) 
-
-    return data
+        data[n,:] = np.random.choice([-1,1], size=length) 
+    return data.astype(int)
 
 if __name__=='__main__':
     start = dt.datetime.now()
@@ -280,12 +278,3 @@ if __name__=='__main__':
         axs[1].set_xlim((0.05, 0.2))
     plt.show()
 
-
-    
-    
-
-    
-
-    
-    
-    

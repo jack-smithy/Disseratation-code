@@ -193,7 +193,7 @@ def generate_data(num, length):
 if __name__=='__main__':
     start = dt.datetime.now()
     Is = [216, 512]
-    repeats = 50
+    repeats = 10
 
     fig, axs = plt.subplots(nrows=1, ncols=2)
 
@@ -227,7 +227,7 @@ if __name__=='__main__':
             for N in Ns:
                 np.random.seed(i)
                 model = Hopfield(I)
-                data = generate_data(I, N)
+                data = generate_data(N, I)
 
                 for j, item in enumerate(data):
                     model.make_weights(data[j])

@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
-plt.style.use('science')
-plt.rcParams['figure.figsize'] = 6,3
-plt.rcParams['figure.constrained_layout.use'] = True
+#plt.style.use('science')
+#plt.rcParams['figure.figsize'] = 6,3
+#plt.rcParams['figure.constrained_layout.use'] = True
 
 class Hopfield:
     def __init__(self, length):
@@ -191,90 +191,42 @@ def generate_data(num, length):
     return data.astype(int)
 
 if __name__=='__main__':
-    start = dt.datetime.now()
-    Is = [216, 512]
-    repeats = 10
+    Ns = [216]
 
-    fig, axs = plt.subplots(nrows=1, ncols=2)
+    Alphas = np.linspace(0.04, 0.32, 20)
 
-    for I in Is:
-        N1min, N1max, step1 = int(0.05*I), int(0.22*I), 3
-        N1s = np.arange(N1min, N1max, step1)
+    for N in Ns:
+        repeats = int(2160/N)
+        Ps = (Alphas*N).astype(int)
+        numPs = len(Ps)
 
-        N2min, N2max, step2 = int(0.11*I), int(0.17*I), 1
-        N2s = np.arange(N2min, N2max, step2)
-
-        N3s = np.append(N1s, N2s)
-
-        res = []
-        [res.append(x) for x in N3s if x not in res]
-        Ns = np.sort(res)
-        print(Ns)
- 
-        numNs = len(Ns)
-        capacities = np.zeros(shape=(numNs, repeats), dtype=np.float64)
-        capacities2 = np.zeros(shape=(numNs, repeats), dtype=np.float64)
-        capacities4 = np.zeros(shape=(numNs, repeats), dtype=np.float64)
-
-        energy = np.zeros(shape=(numNs, repeats), dtype=np.float64)
-        energy2 = np.zeros(shape=(numNs, repeats), dtype=np.float64)
+        q_repeat  = np.zeros(shape=(numPs, repeats), dtype=np.float64)
 
         for i in range(repeats):
-            capacities_sync_arr = []
-            energy_sync_arr = []
+            q_mu = []
             print('----------------------------------------')
-            print(f'Network size = {I}, run = {i+1}/{repeats} \n')
-            for N in Ns:
-                np.random.seed(i)
-                model = Hopfield(I)
-                data = generate_data(N, I)
+            print(f'Network size = {N}, run = {i+1}/{repeats} \n')
+            for P in Ps:
+                model = Hopfield(N)
+                data = generate_data(P, N)
 
-                for j, item in enumerate(data):
-                    model.make_weights(data[j])
+                for j in range(P):
+                    model.make_weights(data[j,:])
 
-                pattern = data[0]
-                partial_pattern = np.where(pattern + np.random.normal(0,1, I) < 0.5, 0, 1)
+                q_mu_p = []
+                for j in range(P):
+                    pattern = data[j,:]
+                    partial_pattern = np.where(pattern + np.random.normal(0,1, N) < 0, -1, 1)
+                    output, e_list = model.predict(partial_pattern, iter=200)
+                    overlap = model.overlap(output, pattern)
+                    q_mu_p.append(overlap)
+                q_mu.append(np.mean(q_mu_p))
 
-                initial_overlap = model.overlap(partial_pattern, pattern)
+            q_repeat[:,i] = q_mu
 
-                output_sync, e_list_sync = model.predict(partial_pattern, iter=200)
+        q = np.mean(q_repeat, axis=1)
+        q2 = np.mean(np.power(q_repeat, 2), axis=1)
+        q4 = np.mean(np.power(q_repeat, 4), axis=1)
 
-                final_energy_sync = e_list_sync[-1]
-                final_overlap_sync = model.overlap(output_sync, pattern)
-
-                capacities_sync_arr.append(final_overlap_sync)
-                energy_sync_arr.append(final_energy_sync)
-
-            capacities[:,i] = capacities_sync_arr
-            capacities2[:,i] = np.power(capacities_sync_arr, 2)
-            capacities4[:,i] = np.power(capacities_sync_arr, 4)
-
-            energy[:,i] = energy_sync_arr
-            energy2[:,i] = np.power(energy_sync_arr, 2)
-
-        q = np.mean(capacities, axis=1)
-        q2 = np.mean(capacities2, axis=1)
-        q4 = np.mean(capacities4, axis=1)
-        g = q4/q2**2
-
-        e = np.mean(energy, axis=1)
-        e2 = np.mean(energy2, axis=1)
-        C = e2 - e**2
-
-        print(dt.datetime.now()-start)
-
-        # np.save(f'hopfield_data/q_I={I}', q)
-        # np.save(f'hopfield_data/q2_I={I}', q2)
-        # np.save(f'hopfield_data/q4_I={I}', q4)
-
-        # np.save(f'hopfield_data/e_I={I}', e)
-        # np.save(f'hopfield_data/e2_I={I}', e2)
-
-        alpha = Ns/I
-        axs[0].plot(alpha, q)
-        axs[0].set_xlim((0.05, 0.2))
-
-        axs[1].plot(alpha, C)
-        axs[1].set_xlim((0.05, 0.2))
+        plt.plot(Alphas, q4/q**2)
     plt.show()
-

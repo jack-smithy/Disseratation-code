@@ -191,12 +191,12 @@ def generate_data(num, length):
     return data.astype(int)
 
 if __name__=='__main__':
-    Ns = [216]
+    Ns = [500]
 
-    Alphas = np.linspace(0.04, 0.32, 20)
+    Alphas = np.linspace(0.04, 0.32, 40)
 
     for N in Ns:
-        repeats = int(2160/N)
+        repeats = 100
         Ps = (Alphas*N).astype(int)
         numPs = len(Ps)
 
@@ -228,5 +228,6 @@ if __name__=='__main__':
         q2 = np.mean(np.power(q_repeat, 2), axis=1)
         q4 = np.mean(np.power(q_repeat, 4), axis=1)
 
-        plt.plot(Alphas, q4/q**2)
-    plt.show()
+        np.save(f'hopfield_data/q_N={N}.npy', q)
+        np.save(f'hopfield_data/q2_N={N}.npy', q2)
+        np.save(f'hopfield_data/q4_N={N}.npy', q4)

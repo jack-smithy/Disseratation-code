@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
+from numba import jit
 #plt.style.use('science')
 #plt.rcParams['figure.figsize'] = 6,3
 #plt.rcParams['figure.constrained_layout.use'] = True
@@ -18,7 +19,7 @@ class Hopfield:
         self.length = length
         self.W = np.zeros([length, length])
 
-    def make_weights(self, data):
+    def make_weights(self, data:list) -> np.ndarray:
         """
         Checks the input is the correct size then updates the weights 
         matrix for one training example
@@ -33,9 +34,9 @@ class Hopfield:
         if N != self.length:
             print(f"Data length is {N}, needs to be {self.length}")
             return 
-        
+
+        self.W += np.outer(data, data)
         for i in range(self.length):
-            self.W[i,:] += (data[i]/N)*data
             self.W[i,i] = 0
 
     def update_neuron(self, state, index=None):
@@ -190,44 +191,47 @@ def generate_data(num, length):
         data[n,:] = np.random.choice([-1,1], size=length) 
     return data.astype(int)
 
-if __name__=='__main__':
-    Ns = [500]
+def test_capacity(alpha, N):
+        print('----------------------------------------')
+        print(f'Size = {N}, Testing capacity alpha = {alpha} \n')
 
-    Alphas = np.linspace(0.04, 0.32, 40)
-
-    for N in Ns:
-        repeats = 100
-        Ps = (Alphas*N).astype(int)
-        numPs = len(Ps)
-
-        q_repeat  = np.zeros(shape=(numPs, repeats), dtype=np.float64)
+        repeats = int(5120/N)
+        P = int(N*alpha)
+        q = []
 
         for i in range(repeats):
-            q_mu = []
-            print('----------------------------------------')
-            print(f'Network size = {N}, run = {i+1}/{repeats} \n')
-            for P in Ps:
-                model = Hopfield(N)
-                data = generate_data(P, N)
+            model = Hopfield(N)
+            data = generate_data(P, N)
 
-                for j in range(P):
-                    model.make_weights(data[j,:])
+            for j in range(P):
+                model.make_weights(data[j,:])
 
-                q_mu_p = []
-                for j in range(P):
-                    pattern = data[j,:]
-                    partial_pattern = np.where(pattern + np.random.normal(0,1, N) < 0, -1, 1)
-                    output, e_list = model.predict(partial_pattern, iter=200)
-                    overlap = model.overlap(output, pattern)
-                    q_mu_p.append(overlap)
-                q_mu.append(np.mean(q_mu_p))
+            q_mu_p = []
+            for j in range(P):
+                pattern = data[j,:]
+                partial_pattern = np.where(pattern + np.random.normal(0,1, N) < 0, -1, 1)
+                output, e_list = model.predict(partial_pattern, iter=100)
+                overlap = model.overlap(output, pattern)
+                q_mu_p.append(overlap)
 
-            q_repeat[:,i] = q_mu
+            q.append(np.mean(q_mu_p))
 
-        q = np.mean(q_repeat, axis=1)
-        q2 = np.mean(np.power(q_repeat, 2), axis=1)
-        q4 = np.mean(np.power(q_repeat, 4), axis=1)
+        return np.mean(q), np.mean(np.power(q, 2)), np.mean(np.power(q, 4))
 
+if __name__=='__main__':
+    test_capacity_vec = np.vectorize(test_capacity)
+    alphas = np.linspace(0.04, 0.32, 40)
+    Ns = [256, 512, 1024]
+
+    start = dt.datetime.now()
+    for N in Ns:
+        q, q2, q4 = test_capacity_vec(alphas, N)
         np.save(f'hopfield_data/q_N={N}.npy', q)
         np.save(f'hopfield_data/q2_N={N}.npy', q2)
         np.save(f'hopfield_data/q4_N={N}.npy', q4)
+    end = dt.datetime.now()
+    print(end-start)
+
+    plt.show()
+
+

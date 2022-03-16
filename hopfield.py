@@ -1,3 +1,4 @@
+from timeit import repeat
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
@@ -192,46 +193,49 @@ def generate_data(num, length):
     return data.astype(int)
 
 def test_capacity(alpha, N):
-        print('----------------------------------------')
-        print(f'Size = {N}, Testing capacity alpha = {alpha} \n')
+    print('----------------------------------------')
+    print(f'Size = {N}, Testing capacity alpha = {alpha} \n')
 
-        repeats = int(5120/N)
-        P = int(N*alpha)
-        q = []
+    P = int(N*alpha)
 
-        for i in range(repeats):
-            model = Hopfield(N)
-            data = generate_data(P, N)
+    model = Hopfield(N)
+    data = generate_data(P, N)
 
-            for j in range(P):
-                model.make_weights(data[j,:])
+    for j in range(P):
+        model.make_weights(data[j,:])
 
-            q_mu_p = []
-            for j in range(P):
-                pattern = data[j,:]
-                partial_pattern = np.where(pattern + np.random.normal(0,1, N) < 0, -1, 1)
-                output, e_list = model.predict(partial_pattern, iter=100)
-                overlap = model.overlap(output, pattern)
-                q_mu_p.append(overlap)
+    q_mu_p = []
+    for j in range(P):
+        pattern = data[j,:]
+        partial_pattern = np.where(pattern + np.random.normal(0,1, N) < 0, -1, 1)
+        output, e_list = model.predict(partial_pattern, iter=100)
+        overlap = model.overlap(output, pattern)
+        q_mu_p.append(overlap)
 
-            q.append(np.mean(q_mu_p))
+    np.mean(q_mu_p)
 
-        return np.mean(q), np.mean(np.power(q, 2)), np.mean(np.power(q, 4))
+    return np.mean(q_mu_p)
 
 if __name__=='__main__':
+    numAlphas = 11
+    alphas = np.linspace(0.04, 0.32, numAlphas)
+
+    repeats = 3
+    N = 256
+
     test_capacity_vec = np.vectorize(test_capacity)
-    alphas = np.linspace(0.04, 0.32, 40)
-    Ns = [256, 512, 1024]
+    q_avg = np.zeros(shape=(repeats, numAlphas))
+    for i in range(repeats):
+        q_avg[i,:] = test_capacity_vec(alphas, N)
+    
+    np.save(f'hopfield_data/qvals_N={N}_run_1.npy', q_avg)
 
-    start = dt.datetime.now()
-    for N in Ns:
-        q, q2, q4 = test_capacity_vec(alphas, N)
-        np.save(f'hopfield_data/q_N={N}.npy', q)
-        np.save(f'hopfield_data/q2_N={N}.npy', q2)
-        np.save(f'hopfield_data/q4_N={N}.npy', q4)
-    end = dt.datetime.now()
-    print(end-start)
+    # q_avg_2 = np.zeros(shape=(repeats, numAlphas))
+    # for i in range(repeats):
+    #     q_avg_2[i,:] = test_capacity_vec(alphas, N)
 
-    plt.show()
-
-
+    # q_avg = np.append(q_avg_2, q_avg_2, axis=0)    
+    # q = np.mean(q_avg, axis=0)
+    
+    # plt.plot(alphas, q)
+    # plt.show()
